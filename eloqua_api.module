@@ -1,0 +1,199 @@
+<?php
+
+/**
+ * @file
+ *  An API module that allows easy integration with the Eloqua automated
+ *  marketing platform.
+ *
+ *  NOTE: Out of the box, this will almost certainly not do what you want it to.
+ *  Please see README.txt for custom integration details.
+ */
+
+
+define('ELOQUA_API_DEFAULT_POST_URL', 'http://now.eloqua.com/e/f2.aspx');
+define('ELOQUA_API_DEFAULT_SITE_ID', -1);
+define('ELOQUA_API_DEFAULT_LOG', TRUE);
+define('ELOQUA_API_DEFAULT_EXPLICIT_VALUES', TRUE);
+define('ELOQUA_API_DEFAULT_TIMEOUT', 10);
+
+
+/**
+ * Implements hook_permission().
+ */
+function eloqua_api_permission() {
+  return array(
+    'administer eloqua api' => array(
+      'title' => t('Administer Eloqua API Configurations'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function eloqua_api_menu() {
+  $items = array();
+
+  // Administration page.
+  $items['admin/config/system/eloqua-api/settings'] = array(
+    'title' => 'Eloqua API',
+    'description' => 'Configure Eloqua integration options.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eloqua_api_admin_settings'),
+    'access arguments' => array('administer eloqua api'),
+    'file' => 'eloqua_api.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function eloqua_api_form_alter(&$form, &$form_state, $form_id) {
+  $settings = _eloqua_api_get_settings();
+
+  // If this form is enabled, add our submit handler.
+  if (isset($settings['enabled_forms'][$form_id]) && $settings['enabled_forms'][$form_id]) {
+    $form['#submit'][] = 'eloqua_api_submit';
+
+    // If we're using explicit values, be sure to set the array.
+    if ($settings['explicit_values'] && !isset($form_state['eloqua_values'])) {
+      $form_state['eloqua_values'] = array();
+    }
+  }
+}
+
+
+/**
+ * Generic submit handler for Eloqua enabled forms.
+ *
+ * All this does is submit all values attached to the form to Eloqua. It's your
+ * responsibility to make sure that all fields are present and map to the right
+ * values within Eloqua by form altering and adding them via your own validation
+ * function(s).
+ */
+function eloqua_api_submit($form, &$form_state) {
+  $settings = _eloqua_api_get_settings();
+
+  if ($settings['explicit_values']) {
+    eloqua_api_post($form_state['eloqua_values']);
+  }
+  else {
+    eloqua_api_post($form_state['values']);
+  }
+}
+
+
+/**
+ * Posts a series of parameters to Eloqua asynchronously.
+ *
+ * @param array $params
+ *   An array of parameters (keyed by name) to pass to Eloqua.
+ *
+ * @param string $url
+ *   The URL to which params will be POST'ed, defaults to the specified script.
+ */
+function eloqua_api_post($params = array(), $url) {
+  $settings = _eloqua_api_get_settings();
+
+  // Only POST the form if a site ID is set.
+  if ($settings['site_id'] > 0) {
+    // Don't post an empty form.
+    if (!empty($params)) {
+      // Append default information.
+      $params += array(
+        'elqSiteID' => $settings['site_id'],
+      );
+
+      // Assign the default URL if none is provided.
+      if (empty($url)) {
+        $url = $settings['post_url'];
+      }
+
+      // Create a query string from the parameters.
+      $post_string = http_build_query($params);
+      $url_parts = parse_url($url);
+
+      // Pull out the useful path parts.
+      $host = $url_parts['host'];
+      $path = $url_parts['path'];
+      $port = isset($url_parts['port']) ? $url_parts['port'] : 80;
+
+      // Set up our POST request.
+      $out = "POST " . $path . " HTTP/1.1\r\n";
+      $out.= "Host: " . $host . "\r\n";
+      $out.= "Content-Type: application/x-www-form-urlencoded\r\n";
+      $out.= "Content-Length: " . strlen($post_string) . "\r\n";
+      $out.= "Connection: Close\r\n\r\n";
+
+      // Append POST data.
+      $out .= $post_string;
+
+      // Open the socket, POST, then close the socket.
+      if (!variable_get('eloqua_api_skip_post', FALSE)) {
+        $fp = fsockopen($host, $port, $errno, $errstr, $settings['timeout']);
+
+        // Log any errors that occurred.
+        if (!$fp) {
+          watchdog('eloqua api', 'Eloqua post failed: error opening the socket. <br /><br /> @message', array('@message' => $errstr), WATCHDOG_ERROR);
+        }
+        else {
+          fwrite($fp, $out);
+          fclose($fp);  
+        }      
+      }
+
+      // Log the POST.
+      if ($settings['log']) {
+        $sanitized_out = filter_xss(nl2br($out), array('br'));
+        watchdog('eloqua api', 'Eloqua post successful: <br /><br /> !post', array('!post' => $sanitized_out), WATCHDOG_NOTICE);
+      }
+    }
+    else {
+      watchdog('eloqua api', 'Eloqua post aborted: no parameters passed.', array(), WATCHDOG_WARNING);
+    }
+  }
+  else {
+    watchdog('eloqua api', 'Eloqua post failed: no Site ID provided.', array(), WATCHDOG_ERROR);
+  }
+}
+
+
+/**
+ * Returns Eloqua API settings.
+ *
+ * @param boolean $refresh
+ *   Whether or not to pull settings freshly. Defaults to FALSE.
+ *
+ * @return
+ *   An array of Eloqua API settings, keyed by name.
+ */
+function _eloqua_api_get_settings($refresh = FALSE) {
+  static $settings;
+
+  // All variables defined by the module.
+  $field_keys = array(
+    'post_url',
+    'site_id',
+    'log',
+    'explicit_values',
+    'timeout',
+  );
+
+  // Loop through each field and return its default.
+  if ($refresh || empty($settings)) {
+    foreach ($field_keys as $field) {  
+      $settings[$field] = variable_get(
+        'eloqua_api_' . $field,
+        constant('ELOQUA_API_DEFAULT_' . strtoupper($field))
+      );
+    }
+  }
+
+  $settings['enabled_forms'] = variable_get('eloqua_api_enabled_forms', array());
+
+  return $settings;
+}
