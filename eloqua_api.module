@@ -18,14 +18,10 @@ define('ELOQUA_API_DEFAULT_TIMEOUT', 10);
 
 
 /**
- * Implements hook_permission().
+ * Implements hook_perm().
  */
-function eloqua_api_permission() {
-  return array(
-    'administer eloqua api' => array(
-      'title' => t('Administer Eloqua API Configurations'),
-    ),
-  );
+function eloqua_api_perm() {
+  return array('administer eloqua api');
 }
 
 
@@ -36,13 +32,14 @@ function eloqua_api_menu() {
   $items = array();
 
   // Administration page.
-  $items['admin/config/system/eloqua-api/settings'] = array(
+  $items['admin/settings/eloqua-api'] = array(
     'title' => 'Eloqua API',
     'description' => 'Configure Eloqua integration options.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('eloqua_api_admin_settings'),
     'access arguments' => array('administer eloqua api'),
     'file' => 'eloqua_api.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;
@@ -96,7 +93,7 @@ function eloqua_api_submit($form, &$form_state) {
  * @param string $url
  *   The URL to which params will be POST'ed, defaults to the specified script.
  */
-function eloqua_api_post($params = array(), $url) {
+function eloqua_api_post($params = array(), $url = NULL) {
   $settings = _eloqua_api_get_settings();
 
   // Only POST the form if a site ID is set.
@@ -142,8 +139,8 @@ function eloqua_api_post($params = array(), $url) {
         }
         else {
           fwrite($fp, $out);
-          fclose($fp);  
-        }      
+          fclose($fp);
+        }
       }
 
       // Log the POST.
@@ -185,7 +182,7 @@ function _eloqua_api_get_settings($refresh = FALSE) {
 
   // Loop through each field and return its default.
   if ($refresh || empty($settings)) {
-    foreach ($field_keys as $field) {  
+    foreach ($field_keys as $field) {
       $settings[$field] = variable_get(
         'eloqua_api_' . $field,
         constant('ELOQUA_API_DEFAULT_' . strtoupper($field))

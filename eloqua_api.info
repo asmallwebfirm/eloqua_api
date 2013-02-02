@@ -1,4 +1,4 @@
 name = Eloqua API
 description = Allows easy integration of Drupal with the Eloqua automated marketing platform.
-core = 7.x
+core = 6.x
 package = "Eloqua"

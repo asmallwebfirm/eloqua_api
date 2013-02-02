@@ -9,7 +9,7 @@
 /**
  * Defines the admin form for the Eloqua API module.
  */
-function eloqua_api_admin_settings($form_state) {
+function eloqua_api_admin_settings(&$form_state) {
   $form = array();
   $settings = _eloqua_api_get_settings();
 
@@ -73,7 +73,7 @@ function eloqua_api_admin_settings($form_state) {
     '#type' => 'checkboxes',
     '#options' => array(
       // Custom forms can be added here via form alter.
-      'user_register_form' => t('User Registration'),
+      'user_register' => t('User Registration'),
     ),
     '#default_value' => $settings['enabled_forms'],
   );

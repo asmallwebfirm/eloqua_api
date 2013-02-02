@@ -11,7 +11,7 @@ Eloqua, this module is also probably not for you.
 
 * Enable the module
 * Give appropriate roles the "administer eloqua api" permission.
-* Configure the module at /admin/config/system/eloqua-api/settings
+* Configure the module at /admin/settings/eloqua-api
 
 
 -- CONFIGURATION --
@@ -81,7 +81,7 @@ function MY_MODULE_eloqua_validate($form, &$form_state) {
   $fields['mail'] = $form_state['values']['mail'];
 
   // Additional fields here...
-  $fields['foo'] = $form_state['values']['foo'][LANGUAGE_NONE][0]['value'];
+  $fields['foo'] = $form_state['values']['foo'][0]['value'];
 
   // Add more fields here...
 
