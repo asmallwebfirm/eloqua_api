@@ -17,6 +17,7 @@ function eloqua_api_uninstall() {
     'explicit_values',
     'enabled_forms',
     'timeout',
+    'tracking_enabled',
   );
   
   foreach ($field_keys as $field) {

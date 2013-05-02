@@ -15,6 +15,8 @@ define('ELOQUA_API_DEFAULT_SITE_ID', -1);
 define('ELOQUA_API_DEFAULT_LOG', TRUE);
 define('ELOQUA_API_DEFAULT_EXPLICIT_VALUES', TRUE);
 define('ELOQUA_API_DEFAULT_TIMEOUT', 10);
+define('ELOQUA_API_DEFAULT_TRACKING_ENABLED', 0);
+define('ELOQUA_API_DEFAULT_TRACKING_PATH', 'sites/all/libraries/elqNow');
 
 
 /**
@@ -43,6 +45,17 @@ function eloqua_api_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function eloqua_api_preprocess_page(&$variables) {
+  $settings = _eloqua_api_get_settings();
+  if ($settings['tracking_enabled']) {
+    drupal_add_js(_eloqua_api_tracking_path() . '/tracking.js');
+    $variables['scripts'] = drupal_get_js();
+  }
 }
 
 
@@ -178,6 +191,7 @@ function _eloqua_api_get_settings($refresh = FALSE) {
     'log',
     'explicit_values',
     'timeout',
+    'tracking_enabled',
   );
 
   // Loop through each field and return its default.
@@ -193,4 +207,29 @@ function _eloqua_api_get_settings($refresh = FALSE) {
   $settings['enabled_forms'] = variable_get('eloqua_api_enabled_forms', array());
 
   return $settings;
+}
+
+
+/**
+ * Return the path to the plugin.
+ */
+function _eloqua_api_tracking_path() {
+  static $library_path = NULL;
+
+  // Try to locate the library path in any possible setup.
+  // (Somewhat borrowed from colorbox.)
+  if ($library_path == NULL) {
+    // Ask the libraries module.
+    if ($library_path == NULL && module_exists('libraries')) {
+      if ($path = libraries_get_path('elqNow')) {
+        $library_path = $path;
+      }
+    }
+    // If no path is found suggest the default one.
+    elseif ($library_path == NULL) {
+      $library_path = ELOQUA_API_DEFAULT_TRACKING_PATH;
+    }
+  }
+
+  return $library_path;
 }

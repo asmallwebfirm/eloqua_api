@@ -59,6 +59,13 @@ function eloqua_api_admin_settings(&$form_state) {
     '#default_value' => $settings['log'],
   );
 
+  $form['eloqua_api_settings']['eloqua_api_tracking_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Eloqua tracking.'),
+    '#description' => t('Select this to enable sitewide Eloqua tracking via scripts.'),
+    '#default_value' => $settings['tracking_enabled'],
+  );
+
   // Specific forms fieldset.
   // @TODO: Add additional core-provided forms. Contact? Node add? Etc.
   $form['eloqua_api_forms'] = array(
