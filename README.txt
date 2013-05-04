@@ -26,7 +26,20 @@ configuration page:
 See the "usage overview" section below for more details on enabled forms.
 Additional details on the "push defined values" check are also explained there.
 
-You may optionally configure whether or not to log Eloqua form submittals.
+There are several optional settings that can be changed on the settings page:
+
+* When "Log Eloqua posts" is checked, form submissions sent to Eloqua will be
+  logged via watchdog. You can see these by filtering to messages of type
+  "eloqua api" at /admin/reports/dblog
+* When "Enable Eloqua tracking" is checked, Eloqua API will attempt to include
+  your Eloqua tracking script on every page load. Note that this may not be
+  necessary if you already include this on your site in another way. You should
+  put this script in a location like: sites/all/libraries/elqNow/tracking.js
+* When "Send Eloqua customer GUID" is checked, Eloqua API will attempt to append
+  the customer GUID to the form submission. You will need to include your Eloqua
+  tracking script (either by checking the box above or some other means) in
+  order for this feature to work. This will not work for users with cookies or
+  JavaScript disabled.
 
 
 -- USAGE OVERVIEW --
@@ -61,7 +74,7 @@ function MY_MODULE_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     // Expose the form you want to the Eloqua API Configuration Settings.
     case 'eloqua_api_admin_settings':
-      $form['eloqua_api_forms']['eloqua_api_enabled_forms']['#options'][] = 'MY_FORM_ID';
+      $form['eloqua_api_forms']['eloqua_api_enabled_forms']['#options']['MY_FORM_ID'] = 'My form name';
       break;
 
     // Add a validation function to the form you exposed above.
