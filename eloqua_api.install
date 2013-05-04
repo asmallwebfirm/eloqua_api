@@ -18,6 +18,8 @@ function eloqua_api_uninstall() {
     'enabled_forms',
     'timeout',
     'tracking_enabled',
+    'send_customer_guid',
+    'customer_guid_field',
   );
   
   foreach ($field_keys as $field) {

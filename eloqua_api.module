@@ -17,6 +17,8 @@ define('ELOQUA_API_DEFAULT_EXPLICIT_VALUES', TRUE);
 define('ELOQUA_API_DEFAULT_TIMEOUT', 10);
 define('ELOQUA_API_DEFAULT_TRACKING_ENABLED', 0);
 define('ELOQUA_API_DEFAULT_TRACKING_PATH', 'sites/all/libraries/elqNow');
+define('ELOQUA_API_DEFAULT_SEND_CUSTOMER_GUID', 0);
+define('ELOQUA_API_DEFAULT_CUSTOMER_GUID_FIELD', 'elqCustomerGUID');
 
 
 /**
@@ -75,12 +77,44 @@ function eloqua_api_form_alter(&$form, &$form_state, $form_id) {
 
   // If this form is enabled, add our submit handler.
   if (isset($settings['enabled_forms'][$form_id]) && $settings['enabled_forms'][$form_id]) {
+    $form['#validate'][] = 'eloqua_api_validate';
     $form['#submit'][] = 'eloqua_api_submit';
 
     // If we're using explicit values, be sure to set the array.
     if ($settings['explicit_values'] && !isset($form_state['eloqua_values'])) {
       $form_state['eloqua_values'] = array();
     }
+
+    // If configured to do so, add JS and hidden field for GUID.
+    if ($settings['send_customer_guid']) {
+      // Attach the JavaScript.
+      $modpath = drupal_get_path('module', 'eloqua_api');
+      $form['#attached']['js'][] = $modpath . '/js/form_attachment.js';
+
+      // Create a hidden field with ID to attach to.
+      $form['eloqua_api_cid'] = array(
+        '#type' => 'hidden',
+        '#attributes' => array('id' => 'eloqua-api-cid'),
+      );
+    }
+  }
+}
+
+
+/**
+ * Generic validation handler for Eloqua enabled forms.
+ *
+ * Custom fields provided by this module are mapped here.
+ */
+function eloqua_api_validate($form, &$form_state) {
+  // Determine whether we're writing to "eloqua_values" or "values."
+  $settings = _eloqua_api_get_settings();
+  $append = &$form_state[($settings['explicit_values'] ? 'eloqua_values' : 'values')];
+
+  // If configured, get and append the customer GUID.
+  if ($settings['send_customer_guid'] && isset($form_state['values']['eloqua_api_cid'])) {
+    $append[$settings['customer_guid_field']] = $form_state['values']['eloqua_api_cid'];
+    unset($form_state['values']['eloqua_api_cid']);
   }
 }
 
@@ -200,6 +234,8 @@ function _eloqua_api_get_settings($refresh = FALSE) {
     'explicit_values',
     'timeout',
     'tracking_enabled',
+    'send_customer_guid',
+    'customer_guid_field',
   );
 
   // Loop through each field and return its default.

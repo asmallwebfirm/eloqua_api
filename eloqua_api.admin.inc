@@ -66,6 +66,13 @@ function eloqua_api_admin_settings($form_state) {
     '#default_value' => $settings['tracking_enabled'],
   );
 
+  $form['eloqua_api_settings']['eloqua_api_send_customer_guid'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Send Eloqua customer GUID.'),
+    '#description' => t('Select this to attempt to send the customer GUID with the POST.'),
+    '#default_value' => $settings['send_customer_guid'],
+  );
+
   // Specific forms fieldset.
   // @TODO: Add additional core-provided forms. Contact? Node add? Etc.
   $form['eloqua_api_forms'] = array(
