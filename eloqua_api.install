@@ -20,6 +20,7 @@ function eloqua_api_uninstall() {
     'tracking_enabled',
     'send_customer_guid',
     'customer_guid_field',
+    'cookie_write_field',
   );
   
   foreach ($field_keys as $field) {

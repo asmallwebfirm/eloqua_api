@@ -19,6 +19,7 @@ define('ELOQUA_API_DEFAULT_TRACKING_ENABLED', 0);
 define('ELOQUA_API_DEFAULT_TRACKING_PATH', 'sites/all/libraries/elqNow');
 define('ELOQUA_API_DEFAULT_SEND_CUSTOMER_GUID', 0);
 define('ELOQUA_API_DEFAULT_CUSTOMER_GUID_FIELD', 'elqCustomerGUID');
+define('ELOQUA_API_DEFAULT_COOKIE_WRITE_FIELD', 'elqCookieWrite');
 
 
 /**
@@ -114,6 +115,7 @@ function eloqua_api_validate($form, &$form_state) {
   // If configured, get and append the customer GUID.
   if ($settings['send_customer_guid'] && isset($form_state['values']['eloqua_api_cid'])) {
     $append[$settings['customer_guid_field']] = $form_state['values']['eloqua_api_cid'];
+    $append[$settings['cookie_write_field']] = '0';
     unset($form_state['values']['eloqua_api_cid']);
   }
 }
@@ -236,6 +238,7 @@ function _eloqua_api_get_settings($refresh = FALSE) {
     'tracking_enabled',
     'send_customer_guid',
     'customer_guid_field',
+    'cookie_write_field',
   );
 
   // Loop through each field and return its default.
