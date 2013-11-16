@@ -41,7 +41,7 @@ function eloqua_api_menu() {
   $items = array();
 
   // Administration page.
-  $items['admin/config/system/eloqua-api/settings'] = array(
+  $items['admin/config/services/eloqua-api/settings'] = array(
     'title' => 'Eloqua API',
     'description' => 'Configure Eloqua integration options.',
     'page callback' => 'drupal_get_form',
