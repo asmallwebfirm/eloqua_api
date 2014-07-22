@@ -168,7 +168,7 @@ function eloqua_api_post($params = array(), $url = NULL) {
       drupal_alter('eloqua_api_post', $params);
 
       // Create a query string from the parameters.
-      $post_string = http_build_query($params);
+      $post_string = drupal_http_build_query($params);
       $url_parts = parse_url($url);
 
       // Pull out the useful path parts.
