@@ -9,7 +9,6 @@
  * Please see README.txt for custom integration details.
  */
 
-
 define('ELOQUA_API_DEFAULT_POST_URL', 'http://now.eloqua.com/e/f2.aspx');
 define('ELOQUA_API_DEFAULT_SITE_ID', -1);
 define('ELOQUA_API_DEFAULT_DEFAULT_FORM', '');
@@ -22,7 +21,6 @@ define('ELOQUA_API_DEFAULT_SEND_CUSTOMER_GUID', 0);
 define('ELOQUA_API_DEFAULT_CUSTOMER_GUID_FIELD', 'elqCustomerGUID');
 define('ELOQUA_API_DEFAULT_COOKIE_WRITE_FIELD', 'elqCookieWrite');
 
-
 /**
  * Implements hook_permission().
  */
@@ -33,7 +31,6 @@ function eloqua_api_permission() {
     ),
   );
 }
-
 
 /**
  * Implements hook_menu().
@@ -54,7 +51,6 @@ function eloqua_api_menu() {
   return $items;
 }
 
-
 /**
  * Implements hook_preprocess_HOOK().
  */
@@ -70,7 +66,6 @@ function eloqua_api_preprocess_html(&$variables) {
     drupal_add_js($path . 'tracking.js', $options);
   }
 }
-
 
 /**
  * Implements hook_form_alter().
@@ -103,7 +98,6 @@ function eloqua_api_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-
 /**
  * Generic validation handler for Eloqua enabled forms.
  *
@@ -121,7 +115,6 @@ function eloqua_api_validate($form, &$form_state) {
     unset($form_state['values']['eloqua_api_cid']);
   }
 }
-
 
 /**
  * Generic submit handler for Eloqua enabled forms.
@@ -141,7 +134,6 @@ function eloqua_api_submit($form, &$form_state) {
     eloqua_api_post($form_state['values'], $settings['post_url']);
   }
 }
-
 
 /**
  * Posts a series of parameters to Eloqua asynchronously.
@@ -223,6 +215,100 @@ function eloqua_api_post($params = array(), $url = NULL) {
   }
 }
 
+/**
+ * Implements hook_action_info().
+ */
+function eloqua_api_action_info() {
+  return array(
+    'eloqua_api_post_form_data' => array(
+      'type' => 'entity',
+      'label' => t('Post entity data to Eloqua'),
+      'configurable' => FALSE,
+      'vbo_configurable' => TRUE,
+      'triggers' => array('any'),
+    ),
+  );
+}
+
+/**
+ * Per-bulk operation configuration form.
+ */
+function eloqua_api_post_form_data_form($settings) {
+  $form['overrides'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Eloqua form properties'),
+    '#description' => t('Optionally provide or override default or given Eloqua form properties for each selected entity.'),
+  );
+  $form['overrides']['elqFormName'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Eloqua form name'),
+    '#description' => t('Leave blank to use the given or default value.'),
+    '#required' => FALSE,
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for the per-bulk operation configuration form.
+ */
+function eloqua_api_post_form_data_submit($form, $form_state) {
+  return array(
+    'overrides' => array(
+      'elqFormName' => $form_state['values']['elqFormName'],
+    ),
+  );
+}
+
+/**
+ * Performs Eloqua form post action.
+ *
+ * @see eloqua_api_action_info()
+ */
+function eloqua_api_post_form_data(&$entity, $context) {
+  $data = array();
+
+  // Attempt to read and populate all field values for this entity.
+  $entity_type = $context['entity_type'];
+  $ids = entity_extract_ids($entity_type, $entity);
+  $bundle = isset($ids[2]) && !empty($ids[2]) ? $ids[2] : $entity_type;
+  $fields = array_keys(field_info_instances($entity_type, $bundle));
+  foreach ($fields as $field) {
+    $value = field_get_items($entity_type, $entity, $field);
+    if (isset($value[0]['value']) && is_scalar($value[0]['value'])) {
+      $data[$field] = $value[0]['value'];
+    }
+  }
+
+  // Attempt to read and populate all property values for this entity.
+  $properties = array();
+  if (function_exists('entity_get_property_info')) {
+    $entity_properties = entity_get_property_info($entity_type);
+    $properties = array_keys($entity_properties['properties']);
+  }
+  // Otherwise, assume the base table columns are the properties.
+  else {
+    $info = entity_get_info($entity_type);
+    if (isset($info['schema_fields_sql']['base table'])) {
+      $properties = $info['schema_fields_sql']['base table'];
+    }
+  }
+  foreach ($properties as $property) {
+    if (isset($entity->$property) && is_scalar($entity->$property)) {
+      $data[$property] = $entity->$property;
+    }
+  }
+
+  // Override values from the configuration form.
+  foreach ($context['overrides'] as $field => $value) {
+    if (!empty($value)) {
+      $data[$field] = $value;
+    }
+  }
+
+  // Post the data collected off of the entity.
+  eloqua_api_post($data);
+}
 
 /**
  * Returns Eloqua API settings.
@@ -264,7 +350,6 @@ function _eloqua_api_get_settings($refresh = FALSE) {
 
   return $settings;
 }
-
 
 /**
  * Return the path to Eloqua tracking scripts.
