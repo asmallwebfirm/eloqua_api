@@ -37,6 +37,13 @@ function eloqua_api_admin_settings($form_state) {
     '#required' => TRUE,
   );
 
+  $form['eloqua_api_settings']['eloqua_api_default_form'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Global default form name'),
+    '#description' => t('A global, catch-all form name, passed to Eloqua as the value of the elqFormName attribute if none is provided elsewhere.'),
+    '#default_value' => $settings['default_form'],
+  );
+
   $form['eloqua_api_settings']['eloqua_api_timeout'] = array(
     '#type' => 'textfield',
     '#title' => t('Timeout'),
