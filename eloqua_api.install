@@ -19,11 +19,12 @@ function eloqua_api_uninstall() {
     'enabled_forms',
     'timeout',
     'tracking_enabled',
+    'tracking_remote_url',
     'send_customer_guid',
     'customer_guid_field',
     'cookie_write_field',
   );
-  
+
   foreach ($field_keys as $field) {
     variable_del('eloqua_api_' . $field);
   }

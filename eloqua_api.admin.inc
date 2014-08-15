@@ -72,6 +72,13 @@ function eloqua_api_admin_settings($form_state) {
     '#description' => t('Select this to enable sitewide Eloqua tracking via scripts.'),
     '#default_value' => $settings['tracking_enabled'],
   );
+  $form['eloqua_api_settings']['eloqua_api_tracking_remote_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Tracking remote URL'),
+    '#description' => t("Address of the remote tracking JS file."),
+    '#default_value' => $settings['tracking_remote_url'],
+    '#required' => TRUE,
+  );
 
   $form['eloqua_api_settings']['eloqua_api_send_customer_guid'] = array(
     '#type' => 'checkbox',

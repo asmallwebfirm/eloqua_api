@@ -20,6 +20,7 @@ define('ELOQUA_API_DEFAULT_TRACKING_PATH', 'sites/all/libraries/elqNow');
 define('ELOQUA_API_DEFAULT_SEND_CUSTOMER_GUID', 0);
 define('ELOQUA_API_DEFAULT_CUSTOMER_GUID_FIELD', 'elqCustomerGUID');
 define('ELOQUA_API_DEFAULT_COOKIE_WRITE_FIELD', 'elqCookieWrite');
+define('ELOQUA_API_DEFAULT_TRACKING_REMOTE_URL', 'https://img.en25.com/i/elqCfg.min.js');
 
 /**
  * Implements hook_permission().
@@ -56,14 +57,26 @@ function eloqua_api_menu() {
  */
 function eloqua_api_preprocess_html(&$variables) {
   $settings = _eloqua_api_get_settings();
+
+  // Set remote URL client-side config.
+  drupal_add_js(
+    array('eloqua_api' =>
+      array(
+        'trackingRemoteUrl' => $settings['tracking_remote_url'],
+        'siteId' => $settings['site_id'],
+      )
+    ),
+    'setting'
+  );
+
+  // Add tracking include script.
   if ($settings['tracking_enabled']) {
-    $path = _eloqua_api_tracking_path() . '/';
     $options = array(
       'type' => 'file',
       'group' => JS_DEFAULT,
       'weight' => 100,
     );
-    drupal_add_js($path . 'tracking.js', $options);
+    drupal_add_js(drupal_get_path('module', 'eloqua_api') . '/js/tracking.js', $options);
   }
 }
 
@@ -331,6 +344,7 @@ function _eloqua_api_get_settings($refresh = FALSE) {
     'explicit_values',
     'timeout',
     'tracking_enabled',
+    'tracking_remote_url',
     'send_customer_guid',
     'customer_guid_field',
     'cookie_write_field',
@@ -349,27 +363,4 @@ function _eloqua_api_get_settings($refresh = FALSE) {
   $settings['enabled_forms'] = variable_get('eloqua_api_enabled_forms', array());
 
   return $settings;
-}
-
-/**
- * Return the path to Eloqua tracking scripts.
- */
-function _eloqua_api_tracking_path() {
-  static $library_path = NULL;
-
-  // Try to locate the library path in any possible setup.
-  if ($library_path == NULL) {
-    // Ask the libraries module.
-    if ($library_path == NULL && module_exists('libraries')) {
-      if ($path = libraries_get_path('elqNow')) {
-        $library_path = $path;
-      }
-    }
-    // If no path is found suggest the default one.
-    elseif ($library_path == NULL) {
-      $library_path = ELOQUA_API_DEFAULT_TRACKING_PATH;
-    }
-  }
-
-  return $library_path;
 }
