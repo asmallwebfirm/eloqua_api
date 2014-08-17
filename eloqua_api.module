@@ -105,7 +105,6 @@ function eloqua_api_form_alter(&$form, &$form_state, $form_id) {
       // Create a hidden field with ID to attach to.
       $form['eloqua_api_cid'] = array(
         '#type' => 'hidden',
-        '#attributes' => array('id' => 'eloqua-api-cid'),
       );
     }
   }
