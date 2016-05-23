@@ -21,6 +21,9 @@ define('ELOQUA_API_DEFAULT_SEND_CUSTOMER_GUID', 0);
 define('ELOQUA_API_DEFAULT_CUSTOMER_GUID_FIELD', 'elqCustomerGUID');
 define('ELOQUA_API_DEFAULT_COOKIE_WRITE_FIELD', 'elqCookieWrite');
 define('ELOQUA_API_DEFAULT_TRACKING_REMOTE_URL', 'https://img.en25.com/i/elqCfg.min.js');
+define('ELOQUA_API_POST_SUCCESS', 1);
+define('ELOQUA_API_POST_ABORTED', 0);
+define('ELOQUA_API_POST_FAILED', -1);
 
 /**
  * Implements hook_permission().
@@ -155,6 +158,13 @@ function eloqua_api_submit($form, &$form_state) {
  *
  * @param string $url
  *   The URL to which params will be POST'ed, defaults to the specified script.
+ *
+ * @return int
+ *   Returns an integer indicating the status of the POST attempt. One of:
+ *   - ELOQUA_API_POST_SUCCESS (1): If the POST to Eloqua succeeded.
+ *   - ELOQUA_API_POST_ABORTED (0): If the POST to Eloqua was not attempted due
+ *     to a misconfiguration.
+ *   - ELOQUA_API_POST_FAILED (-1): If the POST to Eloqua fails.
  */
 function eloqua_api_post($params = array(), $url = NULL) {
   $settings = _eloqua_api_get_settings();
@@ -205,6 +215,7 @@ function eloqua_api_post($params = array(), $url = NULL) {
         // Log any errors that occurred.
         if (!$fp) {
           watchdog('eloqua api', 'Eloqua post failed: error opening the socket. <br /><br /> @message', array('@message' => $errstr), WATCHDOG_ERROR);
+          return ELOQUA_API_POST_FAILED;
         }
         else {
           fwrite($fp, $out);
@@ -217,13 +228,16 @@ function eloqua_api_post($params = array(), $url = NULL) {
         $sanitized_out = filter_xss(nl2br($out), array('br'));
         watchdog('eloqua api', 'Eloqua post successful: <br /><br /> !post', array('!post' => $sanitized_out), WATCHDOG_NOTICE);
       }
+      return ELOQUA_API_POST_SUCCESS;
     }
     else {
       watchdog('eloqua api', 'Eloqua post aborted: no parameters passed.', array(), WATCHDOG_WARNING);
+      return ELOQUA_API_POST_ABORTED;
     }
   }
   else {
     watchdog('eloqua api', 'Eloqua post failed: no Site ID provided.', array(), WATCHDOG_ERROR);
+    return ELOQUA_API_POST_ABORTED;
   }
 }
 
