@@ -29,3 +29,16 @@ function eloqua_api_uninstall() {
     variable_del('eloqua_api_' . $field);
   }
 }
+
+/**
+ *
+ * Update to the Eloqua POST end point URLs
+ * In Fall 2015, Oracle announced that it had changed the application URLs for Eloqua Pod 01 and Pod 02 to align with all other Eloqua pods.
+ *
+ */
+function eloqua_api_update_7100(){
+  $base_url = variable_get('eloqua_api_post_url');
+  if(!$base_url || strpos($base_url, 'secure.eloqua.com') !== FALSE ){
+    drupal_set_message(t("Use caution with your current Eloqua settings. You need to determine your Eloqua Pod based URL and set it on the Eloqua API administration page."), 'warning');
+  }
+}

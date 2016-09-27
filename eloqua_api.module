@@ -9,7 +9,7 @@
  * Please see README.txt for custom integration details.
  */
 
-define('ELOQUA_API_DEFAULT_POST_URL', 'http://now.eloqua.com/e/f2.aspx');
+define('ELOQUA_API_DEFAULT_POST_URL', 'https://secure.p01.eloqua.com/e/f2.aspx');
 define('ELOQUA_API_DEFAULT_SITE_ID', -1);
 define('ELOQUA_API_DEFAULT_DEFAULT_FORM', '');
 define('ELOQUA_API_DEFAULT_LOG', TRUE);
